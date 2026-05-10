@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+  }
+
+  function buyPower(){
+    if(money >= powerCost){
+      money -= powerCost;
+      power += 1;
+      powerCost = Math.floor(powerCost * 1.7);
+
+      updateScreen();
+      saveGame();
+    }
+  }
+
+  function buyAuto(){
+    if(money >= autoCost){
+      money -= autoCost;
+      auto += 1;
+      autoCost = Math.floor(autoCost * 1.8);
+
+      updateScreen();
+      saveGame();
+    }
+  }
+
+  setInterval(() => {
+    money += auto;
+    updateScreen();
+    saveGame();
+  }, 1000);
+
+  function saveGame(){
+    localStorage.setItem("money", money);
+    localStorage.setItem("power", power);
+    localStorage.setItem("auto", auto);
+    localStorage.setItem("powerCost", powerCost);
+    localStorage.setItem("autoCost", autoCost);
+  }
+
+  function loadGame(){
+    const savedMoney = localStorage.getItem("money");
+    const savedPower = localStorage.getItem("power");
+    const savedAuto = localStorage.getItem("auto");
+    const savedPowerCost = localStorage.getItem("powerCost");
+    const savedAutoCost = localStorage.getItem("autoCost");
+
+    if(savedMoney !== null){
+      money = Number(savedMoney);
+    }
+
+    if(savedPower !== null){
+      power = Number(savedPower);
+    }
+
+    if(savedAuto !== null){
+      auto = Number(savedAuto);
+    }
+
+    if(savedPowerCost !== null){
+      powerCost = Number(savedPowerCost);
+    }
+
+    if(savedAutoCost !== null){
+      autoCost = Number(savedAutoCost);
+    }
+
+    updateScreen();
+  }
+
+  loadGame();
+</script>
+
+</body>
+</html>
