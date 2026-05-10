@@ -1,73 +1,527 @@
 <!DOCTYPE html>
-  }
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  function buyPower(){
-    if(money >= powerCost){
-      money -= powerCost;
-      power += 1;
-      powerCost = Math.floor(powerCost * 1.7);
+<title>Lucky Clicker</title>
 
-      updateScreen();
-      saveGame();
-    }
-  }
+<style>
 
-  function buyAuto(){
-    if(money >= autoCost){
-      money -= autoCost;
-      auto += 1;
-      autoCost = Math.floor(autoCost * 1.8);
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:sans-serif;
+}
 
-      updateScreen();
-      saveGame();
-    }
-  }
+body{
+  background:#0f172a;
+  color:white;
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  padding:20px;
+  overflow:hidden;
+}
 
-  setInterval(() => {
-    money += auto;
-    updateScreen();
-    saveGame();
-  }, 1000);
+.game{
+  width:100%;
+  max-width:500px;
+  background:#1e293b;
+  border-radius:20px;
+  padding:25px;
+  text-align:center;
+  box-shadow:0 0 30px rgba(0,0,0,0.5);
+}
 
-  function saveGame(){
-    localStorage.setItem("money", money);
-    localStorage.setItem("power", power);
-    localStorage.setItem("auto", auto);
-    localStorage.setItem("powerCost", powerCost);
-    localStorage.setItem("autoCost", autoCost);
-  }
+h1{
+  font-size:40px;
+  margin-bottom:20px;
+}
 
-  function loadGame(){
-    const savedMoney = localStorage.getItem("money");
-    const savedPower = localStorage.getItem("power");
-    const savedAuto = localStorage.getItem("auto");
-    const savedPowerCost = localStorage.getItem("powerCost");
-    const savedAutoCost = localStorage.getItem("autoCost");
+.money{
+  font-size:35px;
+  margin-bottom:15px;
+  color:#38bdf8;
+  font-weight:bold;
+}
 
-    if(savedMoney !== null){
-      money = Number(savedMoney);
-    }
+.stats{
+  margin-top:15px;
+  line-height:2;
+  font-size:18px;
+}
 
-    if(savedPower !== null){
-      power = Number(savedPower);
-    }
+.click-btn{
+  width:220px;
+  height:220px;
+  border-radius:50%;
+  border:none;
+  background:#38bdf8;
+  color:white;
+  font-size:32px;
+  cursor:pointer;
+  margin-top:20px;
+  transition:0.1s;
+  box-shadow:0 0 20px rgba(56,189,248,0.5);
+}
 
-    if(savedAuto !== null){
-      auto = Number(savedAuto);
-    }
+.click-btn:active{
+  transform:scale(0.92);
+}
 
-    if(savedPowerCost !== null){
-      powerCost = Number(savedPowerCost);
-    }
+.section{
+  margin-top:25px;
+  background:#334155;
+  padding:20px;
+  border-radius:15px;
+}
 
-    if(savedAutoCost !== null){
-      autoCost = Number(savedAutoCost);
-    }
+.upgrade-btn{
+  width:100%;
+  padding:15px;
+  border:none;
+  border-radius:12px;
+  background:#22c55e;
+  color:white;
+  font-size:17px;
+  cursor:pointer;
+  margin-top:10px;
+  font-weight:bold;
+}
 
-    updateScreen();
-  }
+#fortune{
+  margin-top:20px;
+  font-size:20px;
+  min-height:50px;
+  color:#facc15;
+}
 
-  loadGame();
+#effect{
+  position:fixed;
+  top:20px;
+  left:50%;
+  transform:translateX(-50%);
+  font-size:45px;
+  color:yellow;
+  font-weight:bold;
+  z-index:9999;
+  pointer-events:none;
+}
+
+</style>
+</head>
+<body>
+
+<div id="effect"></div>
+
+<div class="game">
+
+<h1>🎰 Lucky Clicker</h1>
+
+<div class="money">
+Coins: <span id="money">0</span>
+</div>
+
+<div class="stats">
+
+Level:
+<span id="level">1</span>
+
+<br>
+
+EXP:
+<span id="exp">0/10</span>
+
+<br>
+
+Rebirth:
+<span id="rebirth">0</span>
+
+<br>
+
+Clicks:
+<span id="clicks">0</span>
+
+</div>
+
+<button class="click-btn" onclick="clickCoin()">
+💰 TAP
+</button>
+
+<div id="fortune">
+Good Luck 🍀
+</div>
+
+<div class="section">
+
+<button class="upgrade-btn" onclick="buyPower()">
+
+⚔️ Damage Upgrade
+<br>
+Cost:
+<span id="powerCost">50</span>
+
+</button>
+
+<button class="upgrade-btn" onclick="buyAuto()">
+
+🤖 Auto Income
+<br>
+Cost:
+<span id="autoCost">100</span>
+
+</button>
+
+<button class="upgrade-btn" onclick="rebirthGame()">
+
+🌈 Rebirth
+<br>
+100000 Coins
+
+</button>
+
+</div>
+
+</div>
+
+<script>
+
+let money = 0;
+let power = 1;
+let auto = 0;
+
+let powerCost = 50;
+let autoCost = 100;
+
+let level = 1;
+let exp = 0;
+let expNeed = 10;
+
+let critChance = 0.1;
+let critPower = 10;
+
+let totalClicks = 0;
+
+let rebirth = 0;
+let rebirthBonus = 1;
+
+let achievement100 = false;
+
+let rainbowChance = 0.01;
+
+const fortunes = [
+
+"SUPER LUCK 🍀",
+"ULTRA RARE ✨",
+"MEGA COINS 💰",
+"JACKPOT 🎰",
+"DOPAMINE BOOST ⚡",
+"CRAZY BONUS 🔥"
+
+];
+
+function updateScreen(){
+
+document.getElementById("money").innerText =
+Math.floor(money);
+
+document.getElementById("level").innerText =
+level;
+
+document.getElementById("exp").innerText =
+exp + "/" + expNeed;
+
+document.getElementById("rebirth").innerText =
+rebirth;
+
+document.getElementById("clicks").innerText =
+totalClicks;
+
+document.getElementById("powerCost").innerText =
+powerCost;
+
+document.getElementById("autoCost").innerText =
+autoCost;
+
+}
+
+function randomFortune(){
+
+const random =
+fortunes[Math.floor(Math.random() * fortunes.length)];
+
+document.getElementById("fortune").innerText =
+random;
+
+}
+
+function levelUp(){
+
+if(exp >= expNeed){
+
+level++;
+
+exp = 0;
+
+expNeed = Math.floor(expNeed * 1.5);
+
+document.getElementById("effect").innerText =
+"🔥 LEVEL UP!";
+
+setTimeout(() => {
+
+document.getElementById("effect").innerText = "";
+
+},1000);
+
+}
+
+}
+
+function clickCoin(){
+
+totalClicks++;
+
+let gain = power * rebirthBonus;
+
+money += gain;
+
+exp++;
+
+levelUp();
+
+if(Math.random() < critChance){
+
+let crit = gain * critPower;
+
+money += crit;
+
+document.getElementById("effect").innerText =
+"💥 CRITICAL +" + crit;
+
+setTimeout(() => {
+
+document.getElementById("effect").innerText = "";
+
+},700);
+
+}
+
+if(Math.random() < rainbowChance){
+
+money += 5000;
+
+document.body.style.background =
+"linear-gradient(to right, red, orange, yellow, green, blue, purple)";
+
+document.getElementById("fortune").innerText =
+"🌈 RAINBOW JACKPOT +5000";
+
+setTimeout(() => {
+
+document.body.style.background = "#0f172a";
+
+},1500);
+
+}
+
+if(totalClicks >= 100 && !achievement100){
+
+achievement100 = true;
+
+alert("🏆 ACHIEVEMENT UNLOCKED!");
+
+}
+
+if(Math.random() < 0.15){
+
+randomFortune();
+
+}
+
+updateScreen();
+
+saveGame();
+
+}
+
+function buyPower(){
+
+if(money >= powerCost){
+
+money -= powerCost;
+
+power++;
+
+powerCost =
+Math.floor(powerCost * 1.7);
+
+updateScreen();
+
+saveGame();
+
+}
+
+}
+
+function buyAuto(){
+
+if(money >= autoCost){
+
+money -= autoCost;
+
+auto++;
+
+autoCost =
+Math.floor(autoCost * 1.8);
+
+updateScreen();
+
+saveGame();
+
+}
+
+}
+
+function rebirthGame(){
+
+if(money >= 100000){
+
+rebirth++;
+
+rebirthBonus += 0.5;
+
+money = 0;
+
+power = 1;
+
+auto = 0;
+
+document.getElementById("fortune").innerText =
+"🌈 REBIRTH SUCCESS";
+
+updateScreen();
+
+saveGame();
+
+}
+
+}
+
+setInterval(() => {
+
+money += auto;
+
+updateScreen();
+
+saveGame();
+
+},1000);
+
+function saveGame(){
+
+localStorage.setItem("money", money);
+localStorage.setItem("power", power);
+localStorage.setItem("auto", auto);
+localStorage.setItem("powerCost", powerCost);
+localStorage.setItem("autoCost", autoCost);
+localStorage.setItem("level", level);
+localStorage.setItem("exp", exp);
+localStorage.setItem("expNeed", expNeed);
+localStorage.setItem("rebirth", rebirth);
+localStorage.setItem("rebirthBonus", rebirthBonus);
+localStorage.setItem("totalClicks", totalClicks);
+
+}
+
+function loadGame(){
+
+const savedMoney =
+localStorage.getItem("money");
+
+const savedPower =
+localStorage.getItem("power");
+
+const savedAuto =
+localStorage.getItem("auto");
+
+const savedPowerCost =
+localStorage.getItem("powerCost");
+
+const savedAutoCost =
+localStorage.getItem("autoCost");
+
+const savedLevel =
+localStorage.getItem("level");
+
+const savedExp =
+localStorage.getItem("exp");
+
+const savedExpNeed =
+localStorage.getItem("expNeed");
+
+const savedRebirth =
+localStorage.getItem("rebirth");
+
+const savedRebirthBonus =
+localStorage.getItem("rebirthBonus");
+
+const savedClicks =
+localStorage.getItem("totalClicks");
+
+if(savedMoney !== null){
+money = Number(savedMoney);
+}
+
+if(savedPower !== null){
+power = Number(savedPower);
+}
+
+if(savedAuto !== null){
+auto = Number(savedAuto);
+}
+
+if(savedPowerCost !== null){
+powerCost = Number(savedPowerCost);
+}
+
+if(savedAutoCost !== null){
+autoCost = Number(savedAutoCost);
+}
+
+if(savedLevel !== null){
+level = Number(savedLevel);
+}
+
+if(savedExp !== null){
+exp = Number(savedExp);
+}
+
+if(savedExpNeed !== null){
+expNeed = Number(savedExpNeed);
+}
+
+if(savedRebirth !== null){
+rebirth = Number(savedRebirth);
+}
+
+if(savedRebirthBonus !== null){
+rebirthBonus = Number(savedRebirthBonus);
+}
+
+if(savedClicks !== null){
+totalClicks = Number(savedClicks);
+}
+
+updateScreen();
+
+}
+
+loadGame();
+
 </script>
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9438889058293138"
      crossorigin="anonymous"></script>
